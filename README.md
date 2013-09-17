@@ -19,21 +19,21 @@ To uninstall, type in:
 Usage
 -----
 
-Usage:  unformatter [options...]
+    Usage:  unformatter [options...]
 
-Options
-        -h              show this help text and exit
-        -o              output source file
-        -i              input source file
+    Options
+            -h              show this help text and exit
+            -o              output source file
+            -i              input source file
 
-This program will use the standard input/output, if you don't
-specify an input and/or an output file.
-
+    This program will use the standard input/output, if you don't
+    specify an input and/or an output file.
 
 Copyright
 ---------
 C-unformatter -- Remove out the whitespace in your source code to prove
 your masculinity.
+
 Copyright (C) 2013  Fufu Fang
 
 This program is free software: you can redistribute it and/or modify
