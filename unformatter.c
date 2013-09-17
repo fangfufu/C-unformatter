@@ -49,6 +49,7 @@ int main(int argc, char* const* argv)
         }
     }
 
+    /* The actual processing function */
     rip(in, out);
 
     if (ferror(in)) {
@@ -71,7 +72,6 @@ void rip(FILE* in, FILE* out)
     char* token_list = ";:,{}() ";
     char* token = token_list;
     FILE* tmp1 = tmpfile();
-    //BLAH!!;
     FILE* tmp2 = tmpfile();
 
     if ( (tmp1 == NULL) || (tmp2 == NULL) ) {
@@ -85,23 +85,8 @@ void rip(FILE* in, FILE* out)
     }
     rewind(tmp1);
 
-    /* the actual filtering process */
     while (*token != '\0') {
         while ( (c = fgetc(tmp1)) != EOF) {
-            if (c == '/') {
-                fputc('/', tmp2);
-                int j = fgetc(tmp1);
-                if (j == '/') {
-                    while ( j != '\n') {
-                        fputc(j, tmp2);
-                        j = fgetc(tmp1);
-                    }
-                    fputc('\n', tmp2);
-                } else {
-                    fputc(j, tmp2);
-                }
-                continue;
-            }
             /* check if it is a token character */
             if ( c == *token ) {
                 d = c;
@@ -116,7 +101,7 @@ void rip(FILE* in, FILE* out)
                     }
                 }
             } else {
-                /* the actual default approach */
+                /* the default approach */
                 fputc(c, tmp2);
             }
         }
@@ -147,11 +132,13 @@ void print_help()
     puts("");
     puts("Options");
     puts("\t-h\t\tshow this help text and exit");
-    puts("\t-o\t\toutput source file");
-    puts("\t-i\t\tinput source file");
+    puts("\t-i\t\tthe input source file");
+    puts("\t-o\t\ttheoutput source file");
     puts("");
     puts("This program will use the standard input/output, if you don't");
     puts("specify an input and/or an output file.");
+    puts("");
+    puts("Your source code MUST NOT contain C++ style comment!");
     puts("");
     exit(0);
 }
