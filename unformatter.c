@@ -14,7 +14,6 @@
 
 void rip(FILE* in, FILE* out);
 void print_help();
-
 int main(int argc, char* const* argv)
 {
     FILE* in = stdin;
@@ -87,6 +86,21 @@ void rip(FILE* in, FILE* out)
 
     while (*token != '\0') {
         while ( (c = fgetc(tmp1)) != EOF) {
+            /* Skip C++ style comment */
+            if (c == '/') {
+                fputc('/', tmp2);
+                if ( (d = fgetc(tmp1)) == '/') {
+                    fputc('/', tmp2);
+                    while ( (d = fgetc(tmp1)) != '\n') {
+                        fputc(d, tmp2);
+                        //getchar();
+                    }
+                    fputc('\n', tmp2);
+                } else {
+                    fputc(d, tmp2);
+                }
+                continue;
+            }
             /* check if it is a token character */
             if ( c == *token ) {
                 d = c;
@@ -94,11 +108,7 @@ void rip(FILE* in, FILE* out)
                     ;
                 fputc(d, tmp2);
                 if (isgraph(c)) {
-                    if (isspace(c)) {
-                        fputc(' ', tmp2);
-                    } else {
-                        fputc(c, tmp2);
-                    }
+                    ungetc(c, tmp1);
                 }
             } else {
                 /* the default approach */
@@ -137,8 +147,6 @@ void print_help()
     puts("");
     puts("This program will use the standard input/output, if you don't");
     puts("specify an input and/or an output file.");
-    puts("");
-    puts("Your source code MUST NOT contain C++ style comment!");
     puts("");
     exit(0);
 }

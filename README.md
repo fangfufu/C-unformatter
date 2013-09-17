@@ -29,8 +29,6 @@ Usage
     This program will use the standard input/output, if you don't
     specify an input and/or an output file.
 
-    Your source code MUST NOT contain C++ style comment!
-
 Copyright
 ---------
 C-unformatter -- Remove out the whitespace in your source code to prove
