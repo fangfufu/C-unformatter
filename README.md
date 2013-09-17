@@ -1,7 +1,7 @@
 C-unformatter
 =============
 
-Remove out the whitespace in your source code to prove your masculinity.
+Remove whitespaces in your source code to prove your masculinity.
 
 Installation
 ------------
