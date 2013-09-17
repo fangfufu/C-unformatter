@@ -23,11 +23,13 @@ Usage
 
     Options
             -h              show this help text and exit
-            -o              output source file
-            -i              input source file
+            -i              the input source file
+            -o              theoutput source file
 
     This program will use the standard input/output, if you don't
     specify an input and/or an output file.
+
+    Your source code MUST NOT contain C++ style comment!
 
 Copyright
 ---------
