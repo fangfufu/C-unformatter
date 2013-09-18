@@ -2,8 +2,9 @@
  * @file unformatter.c
  * @brief C-unformatter -- removes the whitespace and comment in your C code
  * @details
- * - inspired by Ralph's Facebook comment... Massively increase the
+ * - inspired by Ralph Eastwood's Facebook comment... Massively increase the
  * masculinity of your C source code.
+ * - Simon Jarrett submitted a patch to fix escape quoted string.
  * - apologies for spaghetti code -- I didn't think it would grow this big.
  */
 
@@ -73,9 +74,9 @@ int main(int argc, char* const* argv)
 
 void rip(FILE* in, FILE* out, int comment)
 {
-    int c, d;
-    char* token_list = ";:,{}()";
-    char* token = token_list;
+    int c;
+    char* token_list = ";:,{}() ";
+    char* token_p = token_list;
     FILE* tmp1 = tmpfile();
     FILE* tmp2 = tmpfile();
 
@@ -91,9 +92,26 @@ void rip(FILE* in, FILE* out, int comment)
     rewind(tmp1);
 
     /* Loop through all tokens */
-    while (*token != '\0') {
+    while (*token_p != '\0') {
         while ( (c = fgetc(tmp1)) != EOF) {
-
+            /* Simon's code */
+            if ( c == '"' || c == '\'' ) {
+                char chrEnd = c;
+                fputc(c, tmp2);
+                do {
+                    c = fgetc(tmp1);
+                    fputc(c, tmp2);
+                    if ( c == '\\' ) {
+                        c = fgetc(tmp1);
+                        fputc(c, tmp2);
+                    }
+                    else if ( c == chrEnd ) {
+                        break;
+                    }
+                }
+                while ( c != EOF );
+                continue;
+            }
             /* Comment handling */
             if (c == '/') {
                 c = fgetc(tmp1);
@@ -146,11 +164,11 @@ void rip(FILE* in, FILE* out, int comment)
             }
 
             /* Token character check */
-            if ( c == *token ) {
-                d = c;
+            if ( c == *token_p ) {
+                char token = c;
                 while(isspace(c = fgetc(tmp1)))
                     ;
-                fputc(d, tmp2);
+                fputc(token, tmp2);
                 if (isprint(c)) {
                     ungetc(c, tmp1);
                 }
@@ -172,7 +190,7 @@ void rip(FILE* in, FILE* out, int comment)
                         strerror(errno));
         }
 
-        token++;
+        token_p++;
     }
 
     /* copy the data back*/
