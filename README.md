@@ -1,8 +1,9 @@
 C-unformatter
 =============
+Remove unnecessary whitespaces and optionally comments in your C source code.
 
-Remove white-spaces and optionally comments in your source code to show your
-masculinity.
+In most cases it turns your source code into a one-liner, excluding the
+preprocessor instructions. 
 
 Installation
 ------------
