@@ -12,22 +12,26 @@
 #include <string.h>
 #include <unistd.h>
 
-void rip(FILE* in, FILE* out);
+void rip(FILE* in, FILE* out, int comment);
 void print_help();
 int main(int argc, char* const* argv)
 {
     FILE* in = stdin;
     FILE* out = stdout;
     int c;
+    int comment = 0;
 
     if (argc == 1) {
         print_help();
     }
 
-    while ((c = getopt(argc, argv, "hi:o:")) != -1) {
+    while ((c = getopt(argc, argv, "chi:o:")) != -1) {
         switch (c) {
             case 'h':
                 print_help();
+                break;
+            case 'c':
+                comment = 1;
                 break;
             case 'i':
                 in = fopen(optarg, "r");
@@ -49,7 +53,7 @@ int main(int argc, char* const* argv)
     }
 
     /* The actual processing function */
-    rip(in, out);
+    rip(in, out, comment);
 
     if (ferror(in)) {
         fprintf(stderr, "Error occured while reading the input.\n");
@@ -65,7 +69,7 @@ int main(int argc, char* const* argv)
     exit(0);
 }
 
-void rip(FILE* in, FILE* out)
+void rip(FILE* in, FILE* out, int comment)
 {
     int c, d;
     char* token_list = ";:,{}() ";
@@ -83,24 +87,54 @@ void rip(FILE* in, FILE* out)
         fputc(c, tmp1);
     }
     rewind(tmp1);
-
     while (*token != '\0') {
         while ( (c = fgetc(tmp1)) != EOF) {
-            /* Skip C++ style comment */
+            /* Comment checks */
             if (c == '/') {
-                fputc('/', tmp2);
                 c = fgetc(tmp1);
+                /* C++ style */
                 if (c == '/') {
-                    fputc('/', tmp2);
-                    while ( (c = fgetc(tmp1)) != '\n') {
-                        fputc(c, tmp2);
+                    if (comment) {
+                        fputc('/', tmp2);
+                        fputc('/', tmp2);
                     }
-                    fputc('\n', tmp2);
-                /* C style comment */
+                    while ( (c = fgetc(tmp1)) != '\n') {
+                        if (comment) {
+                            fputc(c, tmp2);
+                        }
+                    }
+                    if(comment) {
+                        fputc('\n', tmp2);
+                    }
+                /* C style */
                 } else if (c == '*'){
-                    fputc('*', tmp2);
-                    fprintf(stderr, "1. c: %c, pos %ld\n", c, ftell(tmp1));
+                    if (comment) {
+                        fputc('/', tmp2);
+                        fputc('*', tmp2);
+                    }
+
+                    char s[3];
+                    s[2] = 0;
+                    do {
+                        s[0] = fgetc(tmp1);
+                        s[1] = fgetc(tmp1);
+                        ungetc(s[1], tmp1);
+                        if (comment) {
+                            fputc(s[0], tmp2);
+                        }
+                    } while(strcmp(s, "*/"));
+                    fgetc(tmp1);
+                    if (comment) {
+                        fputc('/', tmp2);
+                    }
+                    /* Remove the white spaces after the comment */
+                    while(isspace(c = fgetc(tmp1)))
+                        ;
+                    if (isprint(c)) {
+                        ungetc(c, tmp1);
+                    }
                 } else {
+                    fputc('/', tmp2);
                     fputc(c, tmp2);
                 }
                 continue;
@@ -111,7 +145,7 @@ void rip(FILE* in, FILE* out)
                 while(isspace(c = fgetc(tmp1)))
                     ;
                 fputc(d, tmp2);
-                if (isgraph(c)) {
+                if (isprint(c)) {
                     ungetc(c, tmp1);
                 }
             } else {
@@ -143,14 +177,19 @@ void rip(FILE* in, FILE* out)
 void print_help()
 {
     puts("Usage:\tunformatter [options...]");
+    puts("Remove unnecessary white-spaces and optionally comments in your");
+    puts("C source code.");
     puts("");
     puts("Options");
     puts("\t-h\t\tshow this help text and exit");
+    puts("\t-c\t\tkeep the comments.");
     puts("\t-i\t\tthe input source file");
     puts("\t-o\t\ttheoutput source file");
     puts("");
     puts("This program will use the standard input/output, if you don't");
     puts("specify an input and/or an output file.");
+    puts("");
+    puts("Note: C++ style comments will force a line break.");
     puts("");
     exit(0);
 }

@@ -1,7 +1,8 @@
 C-unformatter
 =============
 
-Remove whitespaces in your source code to prove your masculinity.
+Remove white-spaces and optionally comments in your source code to show your
+masculinity.
 
 Installation
 ------------
@@ -20,19 +21,24 @@ Usage
 -----
 
     Usage:  unformatter [options...]
+    Remove unnecessary white-spaces and optionally comments in your
+    C source code.
 
     Options
             -h              show this help text and exit
+            -c              keep the comments.
             -i              the input source file
             -o              theoutput source file
 
     This program will use the standard input/output, if you don't
     specify an input and/or an output file.
 
+    Note: C++ style comments will force a line break.
+
 Copyright
 ---------
-C-unformatter -- Remove out the whitespace in your source code to prove
-your masculinity.
+C-unformatter -- Remove unnecessary whitespaces and optionally comments in your
+C source code.
 
 Copyright (C) 2013  Fufu Fang
 
