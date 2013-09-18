@@ -1,8 +1,10 @@
 /**
  * @file unformatter.c
  * @brief C-unformatter -- removes the whitespace and comment in your C code
- * @details inspired by Ralph's Facebook comment... Massively increase the
+ * @details
+ * - inspired by Ralph's Facebook comment... Massively increase the
  * masculinity of your C source code.
+ * - apologies for spaghetti code -- I didn't think it would grow this big.
  */
 
 #include <ctype.h>
@@ -87,9 +89,12 @@ void rip(FILE* in, FILE* out, int comment)
         fputc(c, tmp1);
     }
     rewind(tmp1);
+
+    /* Loop through all tokens */
     while (*token != '\0') {
         while ( (c = fgetc(tmp1)) != EOF) {
-            /* Comment checks */
+
+            /* Comment handling */
             if (c == '/') {
                 c = fgetc(tmp1);
                 /* C++ style */
@@ -112,7 +117,6 @@ void rip(FILE* in, FILE* out, int comment)
                         fputc('/', tmp2);
                         fputc('*', tmp2);
                     }
-
                     char s[3];
                     s[2] = 0;
                     do {
@@ -133,13 +137,15 @@ void rip(FILE* in, FILE* out, int comment)
                     if (isprint(c)) {
                         ungetc(c, tmp1);
                     }
+                /* Not comment */
                 } else {
                     fputc('/', tmp2);
                     fputc(c, tmp2);
                 }
                 continue;
             }
-            /* check if it is a token character */
+
+            /* Token character check */
             if ( c == *token ) {
                 d = c;
                 while(isspace(c = fgetc(tmp1)))
@@ -148,13 +154,13 @@ void rip(FILE* in, FILE* out, int comment)
                 if (isprint(c)) {
                     ungetc(c, tmp1);
                 }
+            /* Not a token character */
             } else {
-                /* the default approach */
                 fputc(c, tmp2);
             }
         }
 
-        /* clean up the temporary file streams */
+        /* clean up the temporary file streams before entering the next loop */
         if (fclose(tmp1)) {
             fprintf(stderr, "Error occured when closing tmp2: %s\n",
                     strerror(errno));
@@ -165,6 +171,7 @@ void rip(FILE* in, FILE* out, int comment)
             fprintf(stderr, "Could not recreate tmp2: %s",
                         strerror(errno));
         }
+
         token++;
     }
 
