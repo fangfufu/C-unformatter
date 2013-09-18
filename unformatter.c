@@ -74,7 +74,7 @@ int main(int argc, char* const* argv)
 void rip(FILE* in, FILE* out, int comment)
 {
     int c, d;
-    char* token_list = ";:,{}() ";
+    char* token_list = ";:,{}()";
     char* token = token_list;
     FILE* tmp1 = tmpfile();
     FILE* tmp2 = tmpfile();
