@@ -89,15 +89,19 @@ void rip(FILE* in, FILE* out)
             /* Skip C++ style comment */
             if (c == '/') {
                 fputc('/', tmp2);
-                if ( (d = fgetc(tmp1)) == '/') {
+                c = fgetc(tmp1);
+                if (c == '/') {
                     fputc('/', tmp2);
-                    while ( (d = fgetc(tmp1)) != '\n') {
-                        fputc(d, tmp2);
-                        //getchar();
+                    while ( (c = fgetc(tmp1)) != '\n') {
+                        fputc(c, tmp2);
                     }
                     fputc('\n', tmp2);
+                /* C style comment */
+                } else if (c == '*'){
+                    fputc('*', tmp2);
+                    fprintf(stderr, "1. c: %c, pos %ld\n", c, ftell(tmp1));
                 } else {
-                    fputc(d, tmp2);
+                    fputc(c, tmp2);
                 }
                 continue;
             }
