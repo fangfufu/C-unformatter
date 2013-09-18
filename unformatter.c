@@ -179,6 +179,7 @@ void rip(FILE* in, FILE* out, int comment)
     while ( (c = fgetc(tmp1)) != EOF ) {
         fputc(c, out);
     }
+    fputc('\n', out);
 }
 
 void print_help()
