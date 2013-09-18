@@ -14,12 +14,11 @@
 #include <string.h>
 #include <unistd.h>
 
-void rip(FILE* in, FILE* out, int comment);
+void rip(FILE* file, int comment);
 void print_help();
 int main(int argc, char* const* argv)
 {
-    FILE* in = stdin;
-    FILE* out = stdout;
+    FILE* file = stdin;
     int c;
     int comment = 0;
 
@@ -35,167 +34,138 @@ int main(int argc, char* const* argv)
             case 'c':
                 comment = 1;
                 break;
-            case 'i':
-                in = fopen(optarg, "r");
-                if(in == NULL) {
-                    fprintf(stderr, "Cannot open input file %s: %s\n",
-                           optarg, strerror(errno));
-                    exit(2);
-                }
-                break;
-            case 'o':
-                out = fopen(optarg, "w");
-                if(out == NULL) {
-                    fprintf(stderr, "Cannot open output file %s: %s\n",
-                           optarg, strerror(errno));
-                    exit(2);
-                }
-                break;
         }
     }
 
-    /* The actual processing function */
-    rip(in, out, comment);
-
-    if (ferror(in)) {
-        fprintf(stderr, "Error occured while reading the input.\n");
-        exit(1);
+    int index;
+    for (index = optind; index < argc; index++) {
+        file = fopen(argv[index], "r+");
+        if(file == NULL) {
+            fprintf(stderr, "Cannot open input file %s: %s\n",
+                    argv[index], strerror(errno));
+            exit(2);
+        }
+        rip(file, comment);
+        if (ferror(file)) {
+            fprintf(stderr, "Error occured while reading the input.\n");
+            exit(1);
+        }
     }
-
-    if (ferror(out)) {
-        fprintf(stderr, "Error occured while writing to the output.\n");
-        exit(1);
-    }
-
-
     exit(0);
 }
 
-void rip(FILE* in, FILE* out, int comment)
+void rip(FILE* file, int comment)
 {
     int c, d;
-    char* token_list = ";:,{}()";
-    char* token = token_list;
-    FILE* tmp1 = tmpfile();
-    FILE* tmp2 = tmpfile();
 
-    if ( (tmp1 == NULL) || (tmp2 == NULL) ) {
-        fprintf(stderr, "Could not create temporary files: %s",
+    FILE* tmp;
+
+    if ( (tmp = tmpfile()) == NULL )  {
+        fprintf(stderr, "Could not create the temporary file: %s",
                 strerror(errno));
     }
 
-    /* copy data to the temporary file stream*/
-    while ( (c = fgetc(in)) != EOF ) {
-        fputc(c, tmp1);
-    }
-    rewind(tmp1);
-
     /* Loop through all tokens */
-    while (*token != '\0') {
-        while ( (c = fgetc(tmp1)) != EOF) {
+        while ( (c = fgetc(file)) != EOF) {
 
             /* Comment handling */
             if (c == '/') {
-                c = fgetc(tmp1);
+                c = fgetc(file);
                 /* C++ style */
                 if (c == '/') {
                     if (comment) {
-                        fputc('/', tmp2);
-                        fputc('/', tmp2);
+                        fputc('/', tmp);
+                        fputc('/', tmp);
                     }
-                    while ( (c = fgetc(tmp1)) != '\n') {
+                    while ( (c = fgetc(file)) != '\n') {
                         if (comment) {
-                            fputc(c, tmp2);
+                            fputc(c, tmp);
                         }
                     }
                     if(comment) {
-                        fputc('\n', tmp2);
+                        fputc('\n', tmp);
+                    }
+                    /* Remove the white spaces after the comment */
+                    while(isspace(c = fgetc(file)))
+                        ;
+                    if (isprint(c)) {
+                        ungetc(c, file);
                     }
                 /* C style */
                 } else if (c == '*'){
                     if (comment) {
-                        fputc('/', tmp2);
-                        fputc('*', tmp2);
+                        fputc('/', tmp);
+                        fputc('*', tmp);
                     }
                     char s[3];
                     s[2] = 0;
                     do {
-                        s[0] = fgetc(tmp1);
-                        s[1] = fgetc(tmp1);
-                        ungetc(s[1], tmp1);
+                        s[0] = fgetc(file);
+                        s[1] = fgetc(file);
+                        ungetc(s[1], file);
                         if (comment) {
-                            fputc(s[0], tmp2);
+                            fputc(s[0], tmp);
                         }
                     } while(strcmp(s, "*/"));
-                    fgetc(tmp1);
+                    fgetc(file);
                     if (comment) {
-                        fputc('/', tmp2);
+                        fputc('/', tmp);
                     }
                     /* Remove the white spaces after the comment */
-                    while(isspace(c = fgetc(tmp1)))
+                    while(isspace(c = fgetc(file)))
                         ;
                     if (isprint(c)) {
-                        ungetc(c, tmp1);
+                        ungetc(c, file);
                     }
                 /* Not comment */
                 } else {
-                    fputc('/', tmp2);
-                    fputc(c, tmp2);
+                    fputc('/', tmp);
+                    fputc(c, tmp);
                 }
                 continue;
             }
 
-            /* Token character check */
-            if ( c == *token ) {
+            /** Token character check
+             * @todo add space to the list!*/
+            if ( (c == ';') || (c == ':') || (c == ',')|| (c == '{') || (c == '}') || (c == '(') || (c == ')') ) {
                 d = c;
-                while(isspace(c = fgetc(tmp1)))
+                while(isspace(c = fgetc(file)))
                     ;
-                fputc(d, tmp2);
+                fputc(d, tmp);
                 if (isprint(c)) {
-                    ungetc(c, tmp1);
+                    ungetc(c, file);
                 }
             /* Not a token character */
             } else {
-                fputc(c, tmp2);
+                fputc(c, tmp);
             }
         }
 
         /* clean up the temporary file streams before entering the next loop */
-        if (fclose(tmp1)) {
-            fprintf(stderr, "Error occured when closing tmp2: %s\n",
-                    strerror(errno));
-        }
-        rewind(tmp2);
-        tmp1 = tmp2;
-        if ( (tmp2 = tmpfile()) == NULL ) {
-            fprintf(stderr, "Could not recreate tmp2: %s",
-                        strerror(errno));
-        }
+//         if (fclose(file)) {
+//             fprintf(stderr, "Error occured when closing the input file: %s\n",
+//                     strerror(errno));
+//         }
 
-        token++;
-    }
+        rewind(tmp);
 
-    /* copy the data back*/
-    while ( (c = fgetc(tmp1)) != EOF ) {
-        fputc(c, out);
-    }
-    fputc('\n', out);
+        /* copy the data back*/
+        rewind(file);
+        while ( (c = fgetc(tmp)) != EOF ) {
+            fputc(c, file);
+        }
+        fputc('\n', file);
 }
 
 void print_help()
 {
-    puts("Usage:\tunformatter [options...]");
+    puts("Usage:\tunformatter [options...] [files...]");
     puts("Remove unnecessary white-spaces and optionally comments in your");
     puts("C source code.");
     puts("");
     puts("Options");
     puts("\t-h\t\tshow this help text and exit");
     puts("\t-c\t\tkeep the comments.");
-    puts("\t-i\t\tthe input source file");
-    puts("\t-o\t\ttheoutput source file");
-    puts("");
-    puts("This program will use the standard input/output, if you don't");
-    puts("specify an input and/or an output file.");
     puts("");
     puts("Note: C++ style comments will force a line break.");
     puts("");
