@@ -3,7 +3,7 @@ C-unformatter
 Remove unnecessary whitespaces and optionally comments in your C source code.
 
 In most cases it turns your source code into a one-liner, excluding the
-preprocessor instructions. 
+preprocessor instructions.
 
 Installation
 ------------
@@ -35,6 +35,11 @@ Usage
     specify an input and/or an output file.
 
     Note: C++ style comments will force a line break.
+
+Acknowledgement
+---------------
+* Ralph Eastwood (https://github.com/raedwulf), for his Facebook comment.
+* Simon Jarrett , for the quoted string/character escape code. 
 
 Copyright
 ---------

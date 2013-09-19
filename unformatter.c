@@ -1,10 +1,6 @@
 /**
  * @file unformatter.c
  * @brief C-unformatter -- removes the whitespace and comment in your C code
- * @details
- * - inspired by Ralph's Facebook comment... Massively increase the
- * masculinity of your C source code.
- * - apologies for spaghetti code -- I didn't think it would grow this big.
  */
 
 #include <ctype.h>
@@ -167,6 +163,9 @@ void rip(FILE * input, FILE * output, int comment)
          * a token. */
         if (strchr("=+-*/%><!~&.?:|^;,{}()", c) || isspace(c)) {
             int token = c;
+            if (isspace(token)) {
+                token = ' ';
+            }
             skip_space(input);
             fputc(token, output);
         } else {
@@ -283,7 +282,6 @@ int check_quoted(FILE * input, FILE * output, int c)
 
 int check_preprocessor_statements(FILE * input, FILE * output, int c)
 {
-    /* Inspired by Simon's code */
     if (c == '#') {
         fputc('#', output);
         while( (c = fgetc(input)) != EOF ) {
