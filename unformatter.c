@@ -14,7 +14,6 @@
 #include <string.h>
 #include <unistd.h>
 
-/* primitive functions */
 /**
  * @brief skip spaces in a file stream.
  */
@@ -28,13 +27,26 @@ int check_comment(FILE * input, FILE * output, int c, int comment);
 /**
  * @brief check if character c is the beginning of a quoted string.
  */
-int check_quoted_strings(FILE * input, FILE * output, int c);
+int check_quoted(FILE * input, FILE * output, int c);
 
+/**
+ * @brief check if character c is the start of a preprocessor statement.
+ */
+int check_preprocessor_statements(FILE * input, FILE * output, int c);
 
-/* stream processing functions */
+/**
+ * @brief rip stuff from an input stream, output to another stream.
+ */
 void rip(FILE * input, FILE * output, int comment);
+
+/**
+ * @brief rip stuff from a file.
+ */
 int rip_file(char *filename, int comment);
 
+/**
+ * @brief print out help statements
+ */
 void print_help();
 
 int main(int argc, char *const *argv)
@@ -135,10 +147,10 @@ int rip_file(char *filename, int comment)
 
 void rip(FILE * input, FILE * output, int comment)
 {
-    /* Loop through all characters */
     int c;
+    /* Loop through all characters */
     while ((c = fgetc(input)) != EOF) {
-        if (check_quoted_strings(input, output, c)) {
+        if (check_quoted(input, output, c)) {
             continue;
         }
 
@@ -146,8 +158,14 @@ void rip(FILE * input, FILE * output, int comment)
             continue;
         }
 
-        /* Check if the current character is a token character */
-        if (strchr(";:,{}() ", c)) {
+        if (check_preprocessor_statements(input, output, c)) {
+            continue;
+        }
+
+        /* Check if the current character is a token character. Tokens include
+         * most of the C operators. The idea is that you don't put a space after
+         * a token. */
+        if (strchr("=+-*/%><!~&.?:|^;,{}()", c) || isspace(c)) {
             int token = c;
             skip_space(input);
             fputc(token, output);
@@ -155,7 +173,6 @@ void rip(FILE * input, FILE * output, int comment)
             fputc(c, output);
         }
     }
-
 }
 
 void print_help()
@@ -190,7 +207,7 @@ int check_comment(FILE * input, FILE * output, int c, int comment)
     /* Comment handling */
     if (c == '/') {
         c = fgetc(input);
-        /* C++ style */
+        /* C++ style comment*/
         if (c == '/') {
             if (comment) {
                 fputc('/', output);
@@ -208,7 +225,7 @@ int check_comment(FILE * input, FILE * output, int c, int comment)
                 fputc('\n', output);
             }
             skip_space(input);
-            /* C style */
+            /* C style comment*/
         } else if (c == '*') {
             if (comment) {
                 fputc('/', output);
@@ -232,7 +249,7 @@ int check_comment(FILE * input, FILE * output, int c, int comment)
                 fputc('/', output);
             }
             skip_space(input);
-            /* Not comment */
+            /* Not a comment */
         } else {
             fputc('/', output);
             fputc(c, output);
@@ -242,11 +259,11 @@ int check_comment(FILE * input, FILE * output, int c, int comment)
     return 0;
 }
 
-int check_quoted_strings(FILE * input, FILE * output, int c)
+int check_quoted(FILE * input, FILE * output, int c)
 {
     /* Simon's code */
     if (c == '"' || c == '\'') {
-        char chrEnd = c;
+        int chrEnd = c;
         fputc(c, output);
         do {
             c = fgetc(input);
@@ -259,6 +276,22 @@ int check_quoted_strings(FILE * input, FILE * output, int c)
             }
         }
         while (c != EOF);
+        return 1;
+    }
+    return 0;
+}
+
+int check_preprocessor_statements(FILE * input, FILE * output, int c)
+{
+    /* Inspired by Simon's code */
+    if (c == '#') {
+        fputc('#', output);
+        while( (c = fgetc(input)) != EOF ) {
+            fputc(c, output);
+            if (c == '\n') {
+                break;
+            }
+        }
         return 1;
     }
     return 0;
