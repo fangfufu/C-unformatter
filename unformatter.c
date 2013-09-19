@@ -14,7 +14,8 @@
 #include <string.h>
 #include <unistd.h>
 
-int rip(char* filename, int comment);
+int rip_file(char* filename, int comment);
+void rip(FILE* input, FILE* output, int comment);
 void print_help();
 int main(int argc, char* const* argv)
 {
@@ -39,7 +40,7 @@ int main(int argc, char* const* argv)
     int index;
     int r = 0;
     for (index = optind; index < argc; index++) {
-        if ( (r = rip(argv[index], comment)) != 0 ) {
+        if ( (r = rip_file(argv[index], comment)) != 0 ) {
             fprintf(stderr, "Error occured while processing file %s.",
                     argv[index]);
         };
@@ -47,7 +48,7 @@ int main(int argc, char* const* argv)
     exit(r);
 }
 
-int rip(char* filename, int comment)
+int rip_file(char* filename, int comment)
 {
     int c;
     FILE* input;
@@ -65,7 +66,49 @@ int rip(char* filename, int comment)
         return 2;
     }
 
+    /* The actual processing function */
+    rip(input, output, comment);
+
+    if (ferror(input) || ferror(output)) {
+        fprintf(stderr, "Error occured while processing the file.\n");
+        return 2;
+    }
+
+    if (fclose(input)) {
+        fprintf(stderr, "Could not close the input stream: %s\n", strerror(errno));
+        return 2;
+    }
+
+    if( (input = fopen(filename, "w")) == NULL ) {
+        fprintf(stderr, "Cannot open input file %s: %s\n",
+                filename, strerror(errno));
+        return 2;
+    }
+
+    /* actual copying process */
+    rewind(output);
+    while ( (c = fgetc(output)) != EOF ) {
+        fputc(c, input);
+    }
+    fputc('\n', input);
+
+    if (ferror(input) || ferror(output)) {
+        fprintf(stderr, "Error occured while processing the file.\n");
+        return 1;
+    }
+
+    if (fclose(output)) {
+        fprintf(stderr, "Could not close the temporary stream: %s\n", strerror(errno));
+        return 1;
+    }
+
+    return 0;
+}
+
+void rip(FILE* input, FILE* output, int comment)
+{
     /* Loop through all characters */
+    int c;
     while ( (c = fgetc(input)) != EOF ) {
         /* Simon's code */
         if ( c == '"' || c == '\'' ) {
@@ -107,7 +150,7 @@ int rip(char* filename, int comment)
                 if (isprint(c)) {
                     ungetc(c, input);
                 }
-            /* C style */
+                /* C style */
             } else if (c == '*'){
                 if (comment) {
                     fputc('/', output);
@@ -133,7 +176,7 @@ int rip(char* filename, int comment)
                 if (isprint(c)) {
                     ungetc(c, input);
                 }
-            /* Not comment */
+                /* Not comment */
             } else {
                 fputc('/', output);
                 fputc(c, output);
@@ -149,46 +192,12 @@ int rip(char* filename, int comment)
             if (isprint(c)) {
                 ungetc(c, input);
             }
-        /* Not a token character */
+            /* Not a token character */
         } else {
             fputc(c, output);
         }
     }
 
-    if (ferror(input) || ferror(output)) {
-        fprintf(stderr, "Error occured while processing the file.\n");
-        return 2;
-    }
-
-    if (fclose(input)) {
-        fprintf(stderr, "Could not close the input stream: %s\n", strerror(errno));
-        return 2;
-    }
-
-    if( (input = fopen(filename, "w")) == NULL ) {
-        fprintf(stderr, "Cannot open input file %s: %s\n",
-                filename, strerror(errno));
-        return 2;
-    }
-
-    /* actual copying process */
-    rewind(output);
-    while ( (c = fgetc(output)) != EOF ) {
-        fputc(c, input);
-    }
-    fputc('\n', input);
-
-    if (ferror(input) || ferror(output)) {
-        fprintf(stderr, "Error occured while processing the file.\n");
-        return 1;
-    }
-
-    if (fclose(output)) {
-        fprintf(stderr, "Could not close the temporary stream: %s\n", strerror(errno));
-        return 1;
-    }
-
-    return 0;
 }
 
 void print_help()
