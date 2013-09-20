@@ -18,17 +18,22 @@ void skip_space(FILE * input);
 /**
  * @brief check if character c is the beginning of a comment.
  */
-int check_comment(FILE * input, FILE * output, int c, int comment);
+int is_comment(FILE * input, FILE * output, int c, int comment);
 
 /**
  * @brief check if character c is the beginning of a quoted string.
  */
-int check_quoted(FILE * input, FILE * output, int c);
+int is_quoted(FILE * input, FILE * output, int c);
 
 /**
  * @brief check if character c is the start of a preprocessor statement.
  */
-int check_preprocessor_statements(FILE * input, FILE * output, int c);
+int is_preprocessor_statements(FILE * input, FILE * output, int c);
+
+/**
+ * @brief check if the current character is the beginning of an escaped newline.
+ */
+int is_escaped_newline(FILE * input, FILE * output, int c);
 
 /**
  * @brief rip stuff from an input stream, output to another stream.
@@ -146,15 +151,15 @@ void rip(FILE * input, FILE * output, int comment)
     int c;
     /* Loop through all characters */
     while ((c = fgetc(input)) != EOF) {
-        if (check_quoted(input, output, c)) {
+        if (is_quoted(input, output, c)) {
             continue;
         }
 
-        if (check_comment(input, output, c, comment)) {
+        if (is_comment(input, output, c, comment)) {
             continue;
         }
 
-        if (check_preprocessor_statements(input, output, c)) {
+        if (is_preprocessor_statements(input, output, c)) {
             continue;
         }
 
@@ -201,7 +206,7 @@ void skip_space(FILE * input)
     }
 }
 
-int check_comment(FILE * input, FILE * output, int c, int comment)
+int is_comment(FILE * input, FILE * output, int c, int comment)
 {
     /* Comment handling */
     if (c == '/') {
@@ -258,7 +263,7 @@ int check_comment(FILE * input, FILE * output, int c, int comment)
     return 0;
 }
 
-int check_quoted(FILE * input, FILE * output, int c)
+int is_quoted(FILE * input, FILE * output, int c)
 {
     if (c == '"' || c == '\'') {
         int chrEnd = c;
@@ -266,14 +271,10 @@ int check_quoted(FILE * input, FILE * output, int c)
         do {
             c = fgetc(input);
             fputc(c, output);
-            if (c == '\\') {
-                c = fgetc(input);
-                if (c != '\n') {
-                    fputc(c, output);
-                } else {
-                    fseek(output, -1, SEEK_CUR);
-                }
-            } else if (c == chrEnd) {
+            if(is_escaped_newline(input, output, c)){
+                continue;
+            }
+            if (c == chrEnd) {
                 break;
             }
         }
@@ -283,18 +284,35 @@ int check_quoted(FILE * input, FILE * output, int c)
     return 0;
 }
 
-int check_preprocessor_statements(FILE * input, FILE * output, int c)
+int is_preprocessor_statements(FILE * input, FILE * output, int c)
 {
     if (c == '#') {
         fputc('#', output);
         while ((c = fgetc(input)) != EOF) {
             fputc(c, output);
+            if(is_escaped_newline(input, output, c)){
+                continue;
+            }
             if (c == '\n') {
                 skip_space(input);
                 break;
             }
         }
         return 1;
+    }
+    return 0;
+}
+
+int is_escaped_newline(FILE * input, FILE * output, int c)
+{
+    if (c == '\\') {
+        c = fgetc(input);
+        if (c != '\n') {
+            fputc(c, output);
+        } else {
+            fseek(output, -1, SEEK_CUR);
+            return 1;
+        }
     }
     return 0;
 }

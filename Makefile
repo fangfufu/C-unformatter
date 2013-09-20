@@ -13,7 +13,7 @@ unformatter: unformatter.o $(COMMON_OBJECTS)
 
 .PHONY: clean
 clean:
-	rm *.o test* $(EXECUTABLE) -rf
+	rm *.o test* *~ $(EXECUTABLE) -rf
 
 .PHONY: install
 install:
