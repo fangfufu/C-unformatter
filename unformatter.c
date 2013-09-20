@@ -287,6 +287,7 @@ int check_preprocessor_statements(FILE * input, FILE * output, int c)
         while( (c = fgetc(input)) != EOF ) {
             fputc(c, output);
             if (c == '\n') {
+                skip_space(input);
                 break;
             }
         }

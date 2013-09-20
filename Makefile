@@ -11,15 +11,9 @@ all: $(EXECUTABLE)
 unformatter: unformatter.o $(COMMON_OBJECTS)
 	$(CC) $(LDFLAGS) $^ -o $@
 
-# depend: .depend
-# .depend: *.c
-# 	rm -f ./.depend
-# 	$(CC) $(CFLAGS) -MM $^ -MF  ./.depend
-# include .depend
-
 .PHONY: clean
 clean:
-	rm *.o $(EXECUTABLE) -rf
+	rm *.o test* $(EXECUTABLE) -rf
 
 .PHONY: install
 install:
