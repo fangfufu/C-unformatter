@@ -206,7 +206,7 @@ int check_comment(FILE * input, FILE * output, int c, int comment)
     /* Comment handling */
     if (c == '/') {
         c = fgetc(input);
-        /* C++ style comment*/
+        /* C++ style comment */
         if (c == '/') {
             if (comment) {
                 fputc('/', output);
@@ -224,7 +224,7 @@ int check_comment(FILE * input, FILE * output, int c, int comment)
                 fputc('\n', output);
             }
             skip_space(input);
-            /* C style comment*/
+            /* C style comment */
         } else if (c == '*') {
             if (comment) {
                 fputc('/', output);
@@ -239,7 +239,7 @@ int check_comment(FILE * input, FILE * output, int c, int comment)
                 if (comment) {
                     fputc(s[0], output);
                 }
-                if ( (s[0] == EOF) || (s[1] == EOF) ) {
+                if ((s[0] == EOF) || (s[1] == EOF)) {
                     break;
                 }
             } while (strcmp(s, "*/"));
@@ -260,7 +260,6 @@ int check_comment(FILE * input, FILE * output, int c, int comment)
 
 int check_quoted(FILE * input, FILE * output, int c)
 {
-    /* Simon's code */
     if (c == '"' || c == '\'') {
         int chrEnd = c;
         fputc(c, output);
@@ -269,7 +268,11 @@ int check_quoted(FILE * input, FILE * output, int c)
             fputc(c, output);
             if (c == '\\') {
                 c = fgetc(input);
-                fputc(c, output);
+                if (c != '\n') {
+                    fputc(c, output);
+                } else {
+                    fseek(output, -1, SEEK_CUR);
+                }
             } else if (c == chrEnd) {
                 break;
             }
@@ -284,7 +287,7 @@ int check_preprocessor_statements(FILE * input, FILE * output, int c)
 {
     if (c == '#') {
         fputc('#', output);
-        while( (c = fgetc(input)) != EOF ) {
+        while ((c = fgetc(input)) != EOF) {
             fputc(c, output);
             if (c == '\n') {
                 skip_space(input);
